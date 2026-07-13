@@ -3,13 +3,13 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 
 public class ToolbarPanel extends JPanel {
-    private JButton downloadButton;
-    private JButton saveButton;
-    private JButton startButton;
-    private JButton backstepButton;
-    private JButton nextstepButton;
-    private JButton addVertexButton;
-    private JButton addEdgeButton;
+    private final JButton downloadButton;
+    private final JButton saveButton;
+    private final JButton startButton;
+    private final JButton backstepButton;
+    private final JButton nextstepButton;
+    private final JButton addVertexButton;
+    private final JButton addEdgeButton;
 
     public ToolbarPanel(){
 //        setLayout(new BorderLayout());

@@ -79,4 +79,14 @@ public class GraphPanel extends JPanel {
             g2d.drawString(text, vertex.x - textWidth / 2, vertex.y + textHeight / 2 - 2);
         }
     }
+
+    public void addVertex(){
+        Vertex v = vertices.getLast();
+        vertices.add(new Vertex(v.x+15,v.y+15));
+        repaint();
+    }
+
+    public int getCount(){
+        return Vertex.count;
+    }
 }

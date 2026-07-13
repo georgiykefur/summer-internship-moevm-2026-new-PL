@@ -43,7 +43,12 @@ public class MainFrame extends JFrame {
         add(rightPanel, BorderLayout.EAST);
 
         toolbarPanel.setAddVertexButtonListener(e -> {
-            logPanel.printLog("Кнопка +вершина нажата.");
+            graphPanel.addVertex();
+            logPanel.printLog("Добавлена вершина " + graphPanel.getCount());
+        });
+
+        toolbarPanel.setAddEdgeButtonListener(e -> {
+            logPanel.printLog("Кнопка +ребро нажата.");
         });
 
     }
