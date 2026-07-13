@@ -2,18 +2,14 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.ArrayList;
 
 public class MatrixPanel extends JPanel {
 
     private JTable table;
     private DefaultTableModel tableModel;
-    private Object[][] initialData = {
-            {"0", "4", "5", "7", "2"},
-            {"∞", "0", "1", "∞", "∞"},
-            {"∞", "6", "0", "∞", "∞"},
-            {"∞", "∞", "8", "0", "∞"},
-            {"∞", "∞", "∞", "5", "0"}
-    };;
+    private Object[][] initialData;
+    private ArrayList<String> vertexNames;
 
     public MatrixPanel(){
         setLayout(new BorderLayout());
@@ -24,10 +20,18 @@ public class MatrixPanel extends JPanel {
         titleLabel.setBorder(BorderFactory.createEmptyBorder(15,0,5,0));
         add(titleLabel, BorderLayout.NORTH);
 
-        // Название колонок
-        String[] vertexNames = {"A", "B", "C", "D", "E"};
+        // Инициализация матрицы
+        Object[][] mtx = {
+            {"0", "4", "5", "7", "2"},
+            {"∞", "0", "1", "∞", "∞"},
+            {"∞", "6", "0", "∞", "∞"},
+            {"∞", "∞", "8", "0", "∞"},
+            {"∞", "∞", "∞", "5", "0"}
+        };
 
-        tableModel = new DefaultTableModel(initialData, vertexNames){
+        setTableModel(mtx);
+
+        tableModel = new DefaultTableModel(initialData, vertexNames.toArray()){
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -60,13 +64,13 @@ public class MatrixPanel extends JPanel {
         headerSize.height = cellSize;
         table.getTableHeader().setPreferredSize(headerSize);
 
-        table.setPreferredScrollableViewportSize(new Dimension(cellSize * vertexNames.length, cellSize * initialData.length));
+        table.setPreferredScrollableViewportSize(new Dimension(cellSize * vertexNames.size(), cellSize * initialData.length));
 
         // Создание скролл панели
         JScrollPane scrollPane = new JScrollPane(table);
 
 //      Имена вершин слева от матрицы
-        JList<String> rowHeader = new JList<>(vertexNames);
+        JList<String> rowHeader = new JList<>(vertexNames.toArray(new String[0]));
         rowHeader.setFixedCellHeight(cellSize);
         rowHeader.setFixedCellWidth(cellSize);
         rowHeader.setBackground(new Color(238, 238, 238));
@@ -102,5 +106,18 @@ public class MatrixPanel extends JPanel {
 
     public void setMatrix(Object[][] mtx){
         this.initialData = mtx;
+    }
+
+    private void setHeader(){
+        int n = initialData.length;
+        vertexNames = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            vertexNames.add(String.valueOf(i+1));
+        }
+    }
+
+    public void setTableModel(Object[][] matrix){
+        initialData = matrix;
+        setHeader();
     }
 }
