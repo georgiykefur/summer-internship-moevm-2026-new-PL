@@ -10,6 +10,7 @@ public class MatrixPanel extends JPanel {
     private DefaultTableModel tableModel;
     private Object[][] initialData;
     private ArrayList<String> vertexNames;
+    private JList<String> rowHeader;
 
     public MatrixPanel(){
         setLayout(new BorderLayout());
@@ -20,52 +21,93 @@ public class MatrixPanel extends JPanel {
         titleLabel.setBorder(BorderFactory.createEmptyBorder(15,0,5,0));
         add(titleLabel, BorderLayout.NORTH);
 
+        table = new JTable();
+        rowHeader = new JList<>();
+
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setRowHeaderView(rowHeader);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+
+        JPanel toCenter = new JPanel(new GridBagLayout());
+        toCenter.add(scrollPane);
+        add(toCenter, BorderLayout.CENTER);
     }
 
-    public void createMatrixPanel(int[][] matrix){
-        initialData = convertIntToObject(matrix);
-        setHeader();
+    public void renderMatrixPanel(int[][] matrix){
+        Object[][] data = convertIntToObject(matrix);
+        String[] columns = getHeaders(matrix.length);
 
-        tableModel = new DefaultTableModel(initialData, vertexNames.toArray()){
+        // Новая модель с запретом редактиварония
+        tableModel = new DefaultTableModel(data, columns) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
         };
 
-        table = new JTable(tableModel);
+        // Устанавливаются данные
+        table.setModel(tableModel);
+        rowHeader.setListData(columns);
 
-        // Текст в ячейках по центру
-        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
-        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+        applyStyles(columns.length, data.length);
+    }
 
-        DefaultTableCellRenderer headerRenderer = (DefaultTableCellRenderer) table.getTableHeader().getDefaultRenderer();
-        headerRenderer.setHorizontalAlignment(JLabel.CENTER);
+    private String[] getHeaders(int size){
+        String[] names = new String[size];
+        for (int i = 0; i < size; i++) {
+            names[i] = String.valueOf(i + 1);
+        }
+        return names;
+    }
 
-        // Квадратные ячейки
+    // обновление одной ячейки
+    public void updateMatrix(int row, int col, String value){
+        tableModel.setValueAt(value, row, col);
+    }
+
+    public void updateMatrix(int row, int col, String[] value){
+        tableModel.setValueAt(value, row, col);
+    }
+
+    public Object[][] convertIntToObject(int[][] mtx){
+        Object[][] temp = new Object[mtx.length][];
+        for (int i = 0; i < mtx.length; i++) {
+            temp[i] = new Object[mtx[i].length];
+            for (int j = 0; j < mtx[i].length; j++) {
+                if (mtx[i][j] == Integer.MAX_VALUE) {
+                    temp[i][j] = "∞";
+                } else {
+                    temp[i][j] = String.valueOf(mtx[i][j]);
+                }
+            }
+        }
+        return temp;
+    }
+
+    private void applyStyles(int colsCount, int rowsCount) {
         int cellSize = 40;
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         table.setRowHeight(cellSize);
 
-        for (int i=0;i<tableModel.getColumnCount();i++){
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+
+        for (int i = 0; i < table.getColumnCount(); i++) {
             table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
             table.getColumnModel().getColumn(i).setPreferredWidth(cellSize);
             table.getColumnModel().getColumn(i).setMinWidth(cellSize);
             table.getColumnModel().getColumn(i).setMaxWidth(cellSize);
         }
 
-        // Квадратные горизонтальные ячейки названия вершин
+        DefaultTableCellRenderer headerRenderer = (DefaultTableCellRenderer) table.getTableHeader().getDefaultRenderer();
+        headerRenderer.setHorizontalAlignment(JLabel.CENTER);
+
         Dimension headerSize = table.getTableHeader().getPreferredSize();
         headerSize.height = cellSize;
         table.getTableHeader().setPreferredSize(headerSize);
 
-        table.setPreferredScrollableViewportSize(new Dimension(cellSize * vertexNames.size(), cellSize * initialData.length));
+        table.setPreferredScrollableViewportSize(new Dimension(cellSize * colsCount, cellSize * rowsCount));
 
-        // Создание скролл панели
-        JScrollPane scrollPane = new JScrollPane(table);
-
-//      Имена вершин слева от матрицы
-        JList<String> rowHeader = new JList<>(vertexNames.toArray(new String[0]));
         rowHeader.setFixedCellHeight(cellSize);
         rowHeader.setFixedCellWidth(cellSize);
         rowHeader.setBackground(new Color(238, 238, 238));
@@ -79,38 +121,6 @@ public class MatrixPanel extends JPanel {
                 return label;
             }
         });
-
-        scrollPane.setRowHeaderView(rowHeader);
-
-        scrollPane.setBorder(BorderFactory.createEmptyBorder());
-
-        // Всю матрицу строго по центру
-        JPanel toCenter = new JPanel(new GridBagLayout());
-        toCenter.add(scrollPane);
-
-        add(toCenter, BorderLayout.CENTER);
     }
 
-    public void updateMatrix(int row, int col, String[] value){
-        tableModel.setValueAt(value, row, col);
-    }
-
-    public Object[][] convertIntToObject(int[][] mtx){
-        Object[][] temp = new Object[mtx.length][];
-        for (int i = 0; i < mtx.length; i++) {
-            temp[i] = new Object[mtx[i].length];
-            for (int j = 0; j < mtx[i].length; j++) {
-                temp[i][j] = mtx[i][j];
-            }
-        }
-        return temp;
-    }
-
-    private void setHeader(){
-        int n = initialData.length;
-        vertexNames = new ArrayList<>();
-        for (int i = 0; i < n; i++) {
-            vertexNames.add(String.valueOf(i+1));
-        }
-    }
 }

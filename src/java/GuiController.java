@@ -33,10 +33,14 @@ public class GuiController {
             }
         }
 
-        matrixPanel.createMatrixPanel(matrix);
+        matrixPanel.renderMatrixPanel(matrix);
 
         logPanel.printLog("Граф успешно загружен. Количество вершин: " + n);
 
         graphPanel.repaint();
+    }
+
+    public void updateMatrix(int[][] matrix){
+
     }
 }
