@@ -13,7 +13,7 @@ public class MainFrame extends JFrame {
 
     public MainFrame(){
         // Настройки окна
-        super("Алгоритм Флойд-Уоршелл");
+        super("Алгоритм Флойда-Уоршелла");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1000, 700);
         setMinimumSize(new Dimension(800, 600));
