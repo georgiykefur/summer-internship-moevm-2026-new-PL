@@ -25,6 +25,8 @@ public class MainFrame extends JFrame {
         matrixPanel = new MatrixPanel();
         logPanel = new LogPanel();
 
+        GuiController guiController = new GuiController(graphPanel, matrixPanel, logPanel);
+
         // Настройка лэяута
         setLayout(new BorderLayout());
 
@@ -51,5 +53,14 @@ public class MainFrame extends JFrame {
             logPanel.printLog("Кнопка +ребро нажата.");
         });
 
+        int[][] adjacencyMatrix = {
+                {0, 2, 0, 5, 1},
+                {2, 0, 3, 0, 4},
+                {0, 3, 0, 7, 0},
+                {5, 0, 7, 0, 6},
+                {1, 4, 0, 6, 0}
+        };
+
+        guiController.initialGraph(adjacencyMatrix);
     }
 }

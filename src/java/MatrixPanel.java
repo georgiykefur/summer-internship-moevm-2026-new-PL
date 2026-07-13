@@ -20,16 +20,11 @@ public class MatrixPanel extends JPanel {
         titleLabel.setBorder(BorderFactory.createEmptyBorder(15,0,5,0));
         add(titleLabel, BorderLayout.NORTH);
 
-        // Инициализация матрицы
-        Object[][] mtx = {
-            {"0", "4", "5", "7", "2"},
-            {"∞", "0", "1", "∞", "∞"},
-            {"∞", "6", "0", "∞", "∞"},
-            {"∞", "∞", "8", "0", "∞"},
-            {"∞", "∞", "∞", "5", "0"}
-        };
+    }
 
-        setTableModel(mtx);
+    public void createMatrixPanel(int[][] matrix){
+        initialData = convertIntToObject(matrix);
+        setHeader();
 
         tableModel = new DefaultTableModel(initialData, vertexNames.toArray()){
             @Override
@@ -85,10 +80,6 @@ public class MatrixPanel extends JPanel {
             }
         });
 
-//        DefaultListCellRenderer listRenderer = (DefaultListCellRenderer) rowHeader.getCellRenderer();
-//        listRenderer.setHorizontalAlignment(SwingConstants.CENTER);
-//        listRenderer.setBorder(BorderFactory.createMatteBorder(1,1,1,1, Color.LIGHT_GRAY));
-
         scrollPane.setRowHeaderView(rowHeader);
 
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
@@ -104,8 +95,15 @@ public class MatrixPanel extends JPanel {
         tableModel.setValueAt(value, row, col);
     }
 
-    public void setMatrix(Object[][] mtx){
-        this.initialData = mtx;
+    public Object[][] convertIntToObject(int[][] mtx){
+        Object[][] temp = new Object[mtx.length][];
+        for (int i = 0; i < mtx.length; i++) {
+            temp[i] = new Object[mtx[i].length];
+            for (int j = 0; j < mtx[i].length; j++) {
+                temp[i][j] = mtx[i][j];
+            }
+        }
+        return temp;
     }
 
     private void setHeader(){
@@ -114,10 +112,5 @@ public class MatrixPanel extends JPanel {
         for (int i = 0; i < n; i++) {
             vertexNames.add(String.valueOf(i+1));
         }
-    }
-
-    public void setTableModel(Object[][] matrix){
-        initialData = matrix;
-        setHeader();
     }
 }

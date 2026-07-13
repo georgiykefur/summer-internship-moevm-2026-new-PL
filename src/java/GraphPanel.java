@@ -34,15 +34,16 @@ public class GraphPanel extends JPanel {
 
     private final int RADIUS = 20;
 
+    private int offsetX = 0, offsetY = 0;
+
     public GraphPanel(){
         setBackground(Color.WHITE);
-
-        Vertex v1 = new Vertex(100, 200);
-        Vertex v2 = new Vertex(450, 400);
-        vertices.add(v1);
-        vertices.add(v2);
-        vertices.add(new Vertex(600,150));
-        edges.add(new Edge(v1, v2, 7));
+//        Vertex v1 = new Vertex(100, 200);
+//        Vertex v2 = new Vertex(450, 400);
+//        vertices.add(v1);
+//        vertices.add(v2);
+//        vertices.add(new Vertex(600,150));
+//        edges.add(new Edge(v1, v2, 7));
     }
 
     @Override
@@ -52,6 +53,8 @@ public class GraphPanel extends JPanel {
         Graphics2D g2d = (Graphics2D) g;
 
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        g2d.translate(offsetX, offsetY);
 
         g2d.setStroke(new BasicStroke(2));
         for (Edge edge : edges) {
@@ -80,9 +83,28 @@ public class GraphPanel extends JPanel {
         }
     }
 
+    public void addVertex(int x, int y){
+        vertices.add(new Vertex(x,y));
+        repaint();
+    }
+
     public void addVertex(){
         Vertex v = vertices.getLast();
         vertices.add(new Vertex(v.x+15,v.y+15));
+        repaint();
+    }
+
+    public void addEdge(Vertex from, Vertex to, int weight){
+        edges.add(new Edge(from, to, weight));
+    }
+
+    public void addEdge(int from, int to, int weight){
+        edges.add(new Edge(vertices.get(from), vertices.get(to), weight));
+    }
+
+    public void clearGraph(){
+        vertices.clear();
+        edges.clear();
         repaint();
     }
 
