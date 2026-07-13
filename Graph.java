@@ -4,10 +4,7 @@ import java.util.List;
 public class Graph {
     public static final double INF = Double.POSITIVE_INFINITY;
 
-    // Список вершин (их ID и координаты)
     public List<Vertex> vertices = new ArrayList<>();
-    
-    // Матрица смежности
     public double[][] matrix = new double[0][0];
 
     public void addVertex(String id, double x, double y) {
@@ -43,19 +40,16 @@ public class Graph {
     private void rebuildMatrix() {
         int n = vertices.size();
         double[][] newMatrix = new double[n][n];
-        
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
                 newMatrix[i][j] = (i == j) ? 0 : INF;
             }
         }
-        
         for (int i = 0; i < Math.min(matrix.length, n); i++) {
             for (int j = 0; j < Math.min(matrix.length, n); j++) {
                 newMatrix[i][j] = matrix[i][j];
             }
         }
-        
         matrix = newMatrix;
     }
 
