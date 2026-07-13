@@ -39,9 +39,6 @@ public class MatrixPanel extends JPanel {
         // Текст в ячейках по центру
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         centerRenderer.setHorizontalAlignment(JLabel.CENTER);
-        for (int i=0;i<tableModel.getColumnCount();i++){
-            table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
-        }
 
         DefaultTableCellRenderer headerRenderer = (DefaultTableCellRenderer) table.getTableHeader().getDefaultRenderer();
         headerRenderer.setHorizontalAlignment(JLabel.CENTER);
@@ -52,11 +49,13 @@ public class MatrixPanel extends JPanel {
         table.setRowHeight(cellSize);
 
         for (int i=0;i<tableModel.getColumnCount();i++){
+            table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
             table.getColumnModel().getColumn(i).setPreferredWidth(cellSize);
             table.getColumnModel().getColumn(i).setMinWidth(cellSize);
             table.getColumnModel().getColumn(i).setMaxWidth(cellSize);
         }
 
+        // Квадратные горизонтальные ячейки названия вершин
         Dimension headerSize = table.getTableHeader().getPreferredSize();
         headerSize.height = cellSize;
         table.getTableHeader().setPreferredSize(headerSize);
@@ -66,21 +65,31 @@ public class MatrixPanel extends JPanel {
         // Создание скролл панели
         JScrollPane scrollPane = new JScrollPane(table);
 
-//         Имена вершин слева от матрицы
+//      Имена вершин слева от матрицы
         JList<String> rowHeader = new JList<>(vertexNames);
         rowHeader.setFixedCellHeight(cellSize);
         rowHeader.setFixedCellWidth(cellSize);
-
         rowHeader.setBackground(new Color(238, 238, 238));
 
-        DefaultListCellRenderer listRenderer = (DefaultListCellRenderer) rowHeader.getCellRenderer();
-        listRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+        rowHeader.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                label.setHorizontalAlignment(SwingConstants.CENTER);
+                label.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 1, Color.LIGHT_GRAY));
+                return label;
+            }
+        });
+
+//        DefaultListCellRenderer listRenderer = (DefaultListCellRenderer) rowHeader.getCellRenderer();
+//        listRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+//        listRenderer.setBorder(BorderFactory.createMatteBorder(1,1,1,1, Color.LIGHT_GRAY));
 
         scrollPane.setRowHeaderView(rowHeader);
 
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
 
-
+        // Всю матрицу строго по центру
         JPanel toCenter = new JPanel(new GridBagLayout());
         toCenter.add(scrollPane);
 
