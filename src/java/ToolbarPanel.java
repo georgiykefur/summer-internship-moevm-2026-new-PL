@@ -11,10 +11,8 @@ public class ToolbarPanel extends JPanel {
     private final JButton addVertexButton;
     private final JButton addEdgeButton;
 
-    public ToolbarPanel(){
-//        setLayout(new BorderLayout());
-//        setBackground(new Color(213, 212, 212));
-        setBorder(BorderFactory.createMatteBorder(0,0,1,0, Color.LIGHT_GRAY));
+    public ToolbarPanel() {
+        setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.LIGHT_GRAY));
 
         downloadButton = new JButton("Загрузить");
         saveButton = new JButton("Сохранить");
@@ -35,31 +33,40 @@ public class ToolbarPanel extends JPanel {
         add(addEdgeButton);
     }
 
-    public void setAddVertexButtonListener(ActionListener listener){
+    public void setAddVertexButtonListener(ActionListener listener) {
         addVertexButton.addActionListener(listener);
     }
 
-    public void setAddEdgeButtonListener(ActionListener listener){
+    public void setAddEdgeButtonListener(ActionListener listener) {
         addEdgeButton.addActionListener(listener);
     }
 
-    public void setDownloadButton(ActionListener listener){
+    public void setDownloadButton(ActionListener listener) {
         downloadButton.addActionListener(listener);
     }
 
-    public void setSaveButton(ActionListener listener){
+    public void setSaveButton(ActionListener listener) {
         saveButton.addActionListener(listener);
     }
 
-    public void setStartButton(ActionListener listener){
+    public void setStartButtonListener(ActionListener listener) {
         startButton.addActionListener(listener);
     }
 
-    public void setBackstepButton(ActionListener listener){
+    public void setBackstepButton(ActionListener listener) {
         backstepButton.addActionListener(listener);
     }
 
-    public void setNextstepButton(ActionListener listener){
+    public void setNextstepButton(ActionListener listener) {
         nextstepButton.addActionListener(listener);
+    }
+
+    // Итерация 1 (Харченко): нужно для блокировки кнопок на границах истории шагов.
+    public void setBackstepButtonEnabled(boolean enabled) {
+        backstepButton.setEnabled(enabled);
+    }
+
+    public void setNextstepButtonEnabled(boolean enabled) {
+        nextstepButton.setEnabled(enabled);
     }
 }

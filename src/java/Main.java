@@ -2,8 +2,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.Enumeration;
 
-public class Main{
-    public static void main(String[] args){
+public class Main {
+    public static void main(String[] args) {
         System.out.println("Оконное приложение запущено");
 
         setGlobalFont(new Font(Font.MONOSPACED, Font.PLAIN, 15));

@@ -10,66 +10,102 @@ public class MatrixPanel extends JPanel {
     private DefaultTableModel tableModel;
     private Object[][] initialData;
     private ArrayList<String> vertexNames;
-    private JList<String> rowHeader;
+    private JLabel titleLabel;
 
-    public MatrixPanel(){
+    public MatrixPanel() {
         setLayout(new BorderLayout());
-        setBorder(BorderFactory.createMatteBorder(0,1,1,1,Color.LIGHT_GRAY));
+        setBorder(BorderFactory.createMatteBorder(0, 1, 1, 1, Color.LIGHT_GRAY));
 
-        // Заголовок (название)
-        JLabel titleLabel = new JLabel("Матрица расстояний", SwingConstants.CENTER);
-        titleLabel.setBorder(BorderFactory.createEmptyBorder(15,0,5,0));
+        titleLabel = new JLabel("Матрица смежности", SwingConstants.CENTER);
+        titleLabel.setBorder(BorderFactory.createEmptyBorder(15, 0, 5, 0));
         add(titleLabel, BorderLayout.NORTH);
-
-        table = new JTable();
-        rowHeader = new JList<>();
-
-        JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setRowHeaderView(rowHeader);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder());
-
-        JPanel toCenter = new JPanel(new GridBagLayout());
-        toCenter.add(scrollPane);
-        add(toCenter, BorderLayout.CENTER);
     }
 
-    public void renderMatrixPanel(int[][] matrix){
-        Object[][] data = convertIntToObject(matrix);
-        String[] columns = getHeaders(matrix.length);
+    public void renderMatrixPanel(int[][] matrix) {
+        titleLabel.setText("Матрица смежности");
+        renderMatrix(convertIntToObject(matrix));
+    }
 
-        // Новая модель с запретом редактиварония
-        tableModel = new DefaultTableModel(data, columns) {
+    public void renderMatrixPanel(double[][] matrix) {
+        titleLabel.setText("Матрица расстояний");
+        renderMatrix(convertDoubleToObject(matrix));
+    }
+
+    private void renderMatrix(Object[][] data) {
+        Component old = ((BorderLayout) getLayout()).getLayoutComponent(BorderLayout.CENTER);
+        if (old != null) {
+            remove(old);
+        }
+
+        initialData = data;
+        setHeader();
+
+        tableModel = new DefaultTableModel(initialData, vertexNames.toArray()) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
         };
 
-        // Устанавливаются данные
-        table.setModel(tableModel);
-        rowHeader.setListData(columns);
+        table = new JTable(tableModel);
 
-        applyStyles(columns.length, data.length);
-    }
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
 
-    private String[] getHeaders(int size){
-        String[] names = new String[size];
-        for (int i = 0; i < size; i++) {
-            names[i] = String.valueOf(i + 1);
+        DefaultTableCellRenderer headerRenderer = (DefaultTableCellRenderer) table.getTableHeader().getDefaultRenderer();
+        headerRenderer.setHorizontalAlignment(JLabel.CENTER);
+
+        int cellSize = 40;
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        table.setRowHeight(cellSize);
+
+        for (int i = 0; i < tableModel.getColumnCount(); i++) {
+            table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
+            table.getColumnModel().getColumn(i).setPreferredWidth(cellSize);
+            table.getColumnModel().getColumn(i).setMinWidth(cellSize);
+            table.getColumnModel().getColumn(i).setMaxWidth(cellSize);
         }
-        return names;
+
+        Dimension headerSize = table.getTableHeader().getPreferredSize();
+        headerSize.height = cellSize;
+        table.getTableHeader().setPreferredSize(headerSize);
+
+        table.setPreferredScrollableViewportSize(new Dimension(
+            cellSize * vertexNames.size(),
+            cellSize * initialData.length
+        ));
+
+        JScrollPane scrollPane = new JScrollPane(table);
+
+        JList<String> rowHeader = new JList<>(vertexNames.toArray(new String[0]));
+        rowHeader.setFixedCellHeight(cellSize);
+        rowHeader.setFixedCellWidth(cellSize);
+        rowHeader.setBackground(new Color(238, 238, 238));
+
+        rowHeader.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                JLabel label = (JLabel) super.getListCellRendererComponent(
+                    list, value, index, isSelected, cellHasFocus);
+                label.setHorizontalAlignment(SwingConstants.CENTER);
+                label.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 1, Color.LIGHT_GRAY));
+                return label;
+            }
+        });
+
+        scrollPane.setRowHeaderView(rowHeader);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+
+        JPanel toCenter = new JPanel(new GridBagLayout());
+        toCenter.add(scrollPane);
+        add(toCenter, BorderLayout.CENTER);
+
+        revalidate();
+        repaint();
     }
 
-    // обновление одной ячейки
-    public void updateMatrix(int row, int col, String value){
-        tableModel.setValueAt(value, row, col);
-    }
-
-    public void updateMatrix(int row, int col, String[] value){
-        tableModel.setValueAt(value, row, col);
-    }
-
-    public Object[][] convertIntToObject(int[][] mtx){
+    public Object[][] convertIntToObject(int[][] mtx) {
         Object[][] temp = new Object[mtx.length][];
         for (int i = 0; i < mtx.length; i++) {
             temp[i] = new Object[mtx[i].length];
@@ -77,50 +113,33 @@ public class MatrixPanel extends JPanel {
                 if (mtx[i][j] == Integer.MAX_VALUE) {
                     temp[i][j] = "∞";
                 } else {
-                    temp[i][j] = String.valueOf(mtx[i][j]);
+                    temp[i][j] = mtx[i][j];
                 }
             }
         }
         return temp;
     }
 
-    private void applyStyles(int colsCount, int rowsCount) {
-        int cellSize = 40;
-        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-        table.setRowHeight(cellSize);
-
-        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
-        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
-
-        for (int i = 0; i < table.getColumnCount(); i++) {
-            table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
-            table.getColumnModel().getColumn(i).setPreferredWidth(cellSize);
-            table.getColumnModel().getColumn(i).setMinWidth(cellSize);
-            table.getColumnModel().getColumn(i).setMaxWidth(cellSize);
-        }
-
-        DefaultTableCellRenderer headerRenderer = (DefaultTableCellRenderer) table.getTableHeader().getDefaultRenderer();
-        headerRenderer.setHorizontalAlignment(JLabel.CENTER);
-
-        Dimension headerSize = table.getTableHeader().getPreferredSize();
-        headerSize.height = cellSize;
-        table.getTableHeader().setPreferredSize(headerSize);
-
-        table.setPreferredScrollableViewportSize(new Dimension(cellSize * colsCount, cellSize * rowsCount));
-
-        rowHeader.setFixedCellHeight(cellSize);
-        rowHeader.setFixedCellWidth(cellSize);
-        rowHeader.setBackground(new Color(238, 238, 238));
-
-        rowHeader.setCellRenderer(new DefaultListCellRenderer() {
-            @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                label.setHorizontalAlignment(SwingConstants.CENTER);
-                label.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 1, Color.LIGHT_GRAY));
-                return label;
+    public Object[][] convertDoubleToObject(double[][] mtx) {
+        Object[][] temp = new Object[mtx.length][];
+        for (int i = 0; i < mtx.length; i++) {
+            temp[i] = new Object[mtx[i].length];
+            for (int j = 0; j < mtx[i].length; j++) {
+                if (mtx[i][j] >= Graph.INF / 2) {
+                    temp[i][j] = "∞";
+                } else {
+                    temp[i][j] = (int) mtx[i][j];
+                }
             }
-        });
+        }
+        return temp;
     }
 
+    private void setHeader() {
+        int n = initialData.length;
+        vertexNames = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            vertexNames.add(String.valueOf(i + 1));
+        }
+    }
 }
