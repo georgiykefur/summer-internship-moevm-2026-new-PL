@@ -29,6 +29,7 @@ public class LogPanel extends JPanel {
 
     public void printLog(String message) {
         logArea.append("> " + message + "\n");
+
         logArea.setCaretPosition(logArea.getDocument().getLength());
     }
 }

@@ -7,7 +7,6 @@ public class GuiController {
     private FloydWarshall floydWarshall;
     private String[] vertexNames;
 
-    // --- Итерация 1 (Харченко): пошаговый режим для кнопок "Назад"/"Вперёд" ---
     private StepHistory<StepSnapshot> stepHistory;
 
     public GuiController(GraphPanel gp, MatrixPanel mp, LogPanel lp) {
@@ -17,15 +16,16 @@ public class GuiController {
         this.graph = new Graph();
     }
 
-    /**
-     * Загружает граф из файла (Харченко, итерация 1) и полностью заменяет
-     * им текущий граф на холсте и в таблице. Координаты вершин берутся
-     * прямо из файла (в отличие от {@link #initialGraph}, который всегда
-     * раскладывает вершины по кругу).
-     *
-     * @throws java.io.IOException если файл не удалось прочитать
-     * @throws GraphParseException если содержимое файла не по формату
-     */
+    
+    public Graph getGraph() {
+        return graph;
+    }
+
+    
+    public String[] getVertexNames() {
+        return vertexNames;
+    }
+
     public void loadGraphFromFile(java.io.File file) throws java.io.IOException {
         Graph loaded = GraphFileLoader.loadFromFile(file);
         int n = loaded.size();
@@ -37,8 +37,11 @@ public class GuiController {
         for (int i = 0; i < n; i++) {
             Graph.Vertex v = loaded.getVertex(i);
             vertexNames[i] = v.id;
-            graphPanel.addVertex((int) v.x, (int) v.y);
+            graphPanel.addVertex((int) v.x, (int) v.y, v.id);
         }
+
+        graphPanel.setVertexNames(vertexNames);
+
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
                 if (i != j && loaded.matrix[i][j] < Graph.INF / 2) {
@@ -54,12 +57,6 @@ public class GuiController {
         prepareStepMode();
     }
 
-    /**
-     * Готовит алгоритм к пошаговому проходу по текущему графу: создаёт
-     * {@link FloydWarshall}, инициализирует его и кладёт в историю
-     * начальный снимок (шаг "до старта"). Вызывается после загрузки графа
-     * (из файла или дефолтной матрицы) и в начале {@link #runAlgorithm}.
-     */
     public void prepareStepMode() {
         floydWarshall = new FloydWarshall(graph);
         floydWarshall.init();
@@ -67,7 +64,6 @@ public class GuiController {
         stepHistory.push(captureSnapshot());
     }
 
-    /** @return можно ли сейчас шагнуть вперёд (есть кэшированный шаг или алгоритм ещё не завершён) */
     public boolean canStepForward() {
         if (stepHistory == null) {
             return false;
@@ -75,17 +71,14 @@ public class GuiController {
         return stepHistory.canStepForward() || (floydWarshall != null && !floydWarshall.finished);
     }
 
-    /** @return можно ли сейчас шагнуть назад */
     public boolean canStepBackward() {
         return stepHistory != null && stepHistory.canStepBackward();
     }
 
-    /** Текущий снимок шага — точка расширения для подсветки Кузьмина (см. applySnapshot). */
     public StepSnapshot getCurrentStep() {
         return stepHistory == null ? null : stepHistory.current();
     }
 
-    /** Обработчик кнопки "Шаг вперёд". */
     public void stepForward() {
         if (stepHistory == null) {
             logPanel.printLog("Граф не загружен — шагать некуда.");
@@ -103,7 +96,6 @@ public class GuiController {
         applySnapshot(stepHistory.current());
     }
 
-    /** Обработчик кнопки "Шаг назад". Сам алгоритм назад не умеет — используем историю снимков. */
     public void stepBackward() {
         if (stepHistory == null || !stepHistory.canStepBackward()) {
             logPanel.printLog("Шагать назад некуда.");
@@ -112,10 +104,51 @@ public class GuiController {
         applySnapshot(stepHistory.stepBackward());
     }
 
-    /** Выполняет один реальный шаг алгоритма и сохраняет его в историю. */
     private void advanceOneStep() {
+        int oldK = floydWarshall.currentK;
+        int oldI = floydWarshall.currentI;
+        int oldJ = floydWarshall.currentJ;
+        double oldValue = floydWarshall.getDistMatrix()[oldI][oldJ];
+
         floydWarshall.step();
         stepHistory.push(captureSnapshot());
+
+        StepSnapshot snap = stepHistory.current();
+        String kName = vertexName(snap.k);
+        String iName = vertexName(snap.i);
+        String jName = vertexName(snap.j);
+
+        boolean hadImprovement = false;
+        String improvementMessage = "";
+        for (FloydWarshall.EdgeUpdate u : snap.updates) {
+            if (u.improved) {
+                hadImprovement = true;
+                double viaK = u.value;
+                double dIK = floydWarshall.getDistMatrix()[u.from][snap.k];
+                double dKJ = floydWarshall.getDistMatrix()[snap.k][u.to];
+                String fromName = vertexName(u.from);
+                String toName = vertexName(u.to);
+                improvementMessage = "Найден более короткий путь из " + fromName + " в " + toName + 
+                    ": " + String.format("%.0f", dIK) + " + " + String.format("%.0f", dKJ) + 
+                    " = " + String.format("%.0f", viaK) + " < " + String.format("%.0f", oldValue);
+                break;
+            }
+        }
+
+        if (hadImprovement) {
+            logPanel.printLog(improvementMessage);
+        } else {
+            double dIK = floydWarshall.getDistMatrix()[oldI][oldK];
+            double dKJ = floydWarshall.getDistMatrix()[oldK][oldJ];
+            double viaK = dIK + dKJ;
+            String fromName = vertexName(oldI);
+            String toName = vertexName(oldJ);
+            String kNameForLog = vertexName(oldK);
+            logPanel.printLog("Улучшение не требуется: D[" + fromName + "][" + kNameForLog + "] + D[" + kNameForLog + "][" + toName + 
+                "] = " + String.format("%.0f", dIK) + " + " + String.format("%.0f", dKJ) + 
+                " = " + String.format("%.0f", viaK) + " >= D[" + fromName + "][" + toName + 
+                "] = " + String.format("%.0f", oldValue));
+        }
     }
 
     private StepSnapshot captureSnapshot() {
@@ -134,36 +167,60 @@ public class GuiController {
         return copy;
     }
 
-    /** Применяет снимок шага к таблице и логу; холст просто просят перерисоваться. */
     private void applySnapshot(StepSnapshot snap) {
         matrixPanel.renderMatrixPanel(snap.dist);
 
-        StringBuilder message = new StringBuilder("Шаг: k=").append(vertexName(snap.k))
-                .append(", i=").append(vertexName(snap.i))
-                .append(", j=").append(vertexName(snap.j));
-        for (FloydWarshall.EdgeUpdate u : snap.updates) {
-            if (u.improved) {
-                message.append(" — найден более короткий путь ")
-                        .append(vertexName(u.from)).append("→").append(vertexName(u.to))
-                        .append(" = ").append((int) u.value);
-            }
-        }
-        if (snap.finished) {
-            message.append(" — алгоритм завершён");
-        }
-        logPanel.printLog(message.toString());
+        String kName = vertexName(snap.k);
+        String iName = vertexName(snap.i);
+        String jName = vertexName(snap.j);
 
-        // TODO(Кузьмин): здесь точка входа для подсветки текущей вершины k и анимации
-        // изменения цвета рёбер (см. ваш метод в GraphPanel) — данные уже готовы:
-        // snap.k / snap.i / snap.j (индексы вершин) и snap.updates (какие рёбра/как изменились).
-        graphPanel.repaint();
+        if (!snap.finished) {
+            double dIK = snap.dist[snap.i][snap.k];
+            double dKJ = snap.dist[snap.k][snap.j];
+            double viaK = dIK + dKJ;
+            double direct = snap.dist[snap.i][snap.j];
+
+            String logMsg = "Итерация k=" + kName + ", i=" + iName + ", j=" + jName +
+                ". Проверяем D[" + iName + "][" + kName + "] + D[" + kName + "][" + jName + 
+                "] = " + String.format("%.0f", dIK) + " + " + String.format("%.0f", dKJ) + 
+                " = " + String.format("%.0f", viaK) + " ? D[" + iName + "][" + jName + 
+                "] = " + String.format("%.0f", direct);
+
+            boolean hadImprovement = false;
+            for (FloydWarshall.EdgeUpdate u : snap.updates) {
+                if (u.improved) {
+                    hadImprovement = true;
+                    break;
+                }
+            }
+
+            if (hadImprovement) {
+                logPanel.printLog(logMsg + " — найден более короткий путь!");
+            } else {
+                logPanel.printLog(logMsg + " — улучшение не требуется");
+            }
+        } else {
+            logPanel.printLog("Алгоритм завершён. Найдены все кратчайшие пути.");
+        }
+
+        if (snap.finished) {
+            graphPanel.clearHighlights();
+            matrixPanel.clearHighlight();
+        } else {
+            graphPanel.setHighlight(snap.k, snap.i, snap.j);
+            graphPanel.setHighlightedEdges(snap.updates);
+            matrixPanel.setCounters(snap.k, snap.i, snap.j);
+            matrixPanel.highlightCells(snap.updates);
+        }
     }
 
     private String vertexName(int index) {
-        return (vertexNames != null && index >= 0 && index < vertexNames.length) ? vertexNames[index] : String.valueOf(index);
+        if (vertexNames != null && index >= 0 && index < vertexNames.length) {
+            return vertexNames[index];
+        }
+        return String.valueOf(index + 1);
     }
 
-    /** Снимок состояния алгоритма на конкретном шаге — то, что хранится в {@link StepHistory}. */
     public static class StepSnapshot {
         public final int k, i, j;
         public final double[][] dist;
@@ -195,12 +252,14 @@ public class GuiController {
             vertexNames[i] = String.valueOf((char) ('A' + i));
         }
 
+        graphPanel.setVertexNames(vertexNames);
+
         for (int i = 0; i < n; i++) {
             double angle = 2 * Math.PI * i / n;
             int x = (int) (centerX + radius * Math.cos(angle));
             int y = (int) (centerY + radius * Math.sin(angle));
             graph.addVertex(vertexNames[i], x, y);
-            graphPanel.addVertex(x, y);
+            graphPanel.addVertex(x, y, vertexNames[i]);
         }
 
         for (int i = 0; i < n; i++) {
@@ -215,12 +274,11 @@ public class GuiController {
         matrixPanel.renderMatrixPanel(matrix);
         graphPanel.repaint();
         logPanel.printLog("Граф загружен. Вершины: " + String.join(", ", vertexNames));
-        
-        // Вывод списка рёбер в лог
+
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
                 if (matrix[i][j] != Integer.MAX_VALUE && i != j) {
-                    logPanel.printLog("  " + vertexNames[i] + " - " + vertexNames[j] + 
+                    logPanel.printLog("  " + vertexNames[i] + " - " + vertexNames[j] +
                         " (вес " + matrix[i][j] + ")");
                 }
             }
@@ -235,9 +293,6 @@ public class GuiController {
 
         logPanel.printLog("Запуск алгоритма Флойда-Уоршелла...");
 
-        // Итерация 1 (Харченко): вместо floydWarshall.runFull() идём через тот же
-        // пошаговый механизм, что и кнопки "Шаг вперёд"/"Шаг назад" — так после
-        // "Запустить" по истории тоже можно пройтись назад до любого промежуточного шага.
         prepareStepMode();
         while (!floydWarshall.finished) {
             advanceOneStep();
@@ -245,7 +300,6 @@ public class GuiController {
 
         double[][] dist = floydWarshall.getDistMatrix();
 
-        // Вывод в консолб
         System.out.println("\nМАТРИЦА КРАТЧАЙШИХ РАССТОЯНИЙ");
         System.out.print("     ");
         for (String name : vertexNames) {
@@ -278,7 +332,6 @@ public class GuiController {
         System.out.println();
         System.out.println("  Отрицательный цикл: " + (floydWarshall.hasNegativeCycle() ? "Есть" : "Нет"));
 
-        // Вывод в лог
         logPanel.printLog("Алгоритм завершён!");
         logPanel.printLog("Матрица кратчайших расстояний:");
         for (int i = 0; i < dist.length; i++) {
@@ -298,8 +351,8 @@ public class GuiController {
             for (int j = 0; j < vertexNames.length; j++) {
                 if (i != j && dist[i][j] < Graph.INF / 2) {
                     java.util.List<String> path = floydWarshall.reconstructPath(vertexNames[i], vertexNames[j]);
-                    logPanel.printLog("  " + vertexNames[i] + " - " + vertexNames[j] + 
-                        " : " + String.join(" - ", path) + 
+                    logPanel.printLog("  " + vertexNames[i] + " - " + vertexNames[j] +
+                        " : " + String.join(" - ", path) +
                         " (длина = " + String.format("%.0f", dist[i][j]) + ")");
                 }
             }

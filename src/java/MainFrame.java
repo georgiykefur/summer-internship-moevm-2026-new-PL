@@ -27,25 +27,32 @@ public class MainFrame extends JFrame {
         setLayout(new BorderLayout());
 
         add(toolbarPanel, BorderLayout.NORTH);
-        add(graphPanel, BorderLayout.CENTER);
 
-        JPanel rightPanel = new JPanel();
-        rightPanel.setLayout(new GridLayout(2, 1, 0, 0));
-        rightPanel.setPreferredSize(new Dimension(300, 0));
-        rightPanel.add(matrixPanel);
-        rightPanel.add(logPanel);
-        add(rightPanel, BorderLayout.EAST);
+        JSplitPane rightSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, matrixPanel, logPanel);
+        rightSplit.setResizeWeight(0.5);
+        rightSplit.setDividerSize(5);
 
-        // INF = Integer.MAX_VALUE означает отсутствие ребра
+        JSplitPane mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, graphPanel, rightSplit);
+        mainSplit.setResizeWeight(1.0);
+        mainSplit.setDividerSize(5);
+        mainSplit.setDividerLocation(700);
+
+        add(mainSplit, BorderLayout.CENTER);
+
         int INF = Integer.MAX_VALUE;
         int[][] adjacencyMatrix = {
-            {0, 2, 10},
-            {INF, 0, 3},
-            {1, INF, 0}
+                {0,   3, INF, 7},
+                {8,   0,   2, INF},
+                {5, INF,   0,   1},
+                {2, INF, INF,   0}
         };
 
         guiController.initialGraph(adjacencyMatrix);
         guiController.prepareStepMode();
+
+        // Передаём имена вершин в MatrixPanel
+        String[] names = {"A", "B", "C", "D"};
+        matrixPanel.setVertexNames(names);
 
         toolbarPanel.setStartButtonListener(e -> {
             guiController.runAlgorithm();
@@ -61,7 +68,6 @@ public class MainFrame extends JFrame {
             logPanel.printLog("Кнопка +ребро нажата");
         });
 
-        // Итерация 1 (Харченко): реальная загрузка графа из файла и парсинг в модель.
         toolbarPanel.setDownloadButton(e -> {
             JFileChooser chooser = new JFileChooser();
             chooser.setDialogTitle("Загрузить граф из файла");
@@ -72,6 +78,13 @@ public class MainFrame extends JFrame {
             File file = chooser.getSelectedFile();
             try {
                 guiController.loadGraphFromFile(file);
+                // используем геттер
+                Graph loadedGraph = guiController.getGraph();
+                String[] loadedNames = new String[loadedGraph.size()];
+                for (int i = 0; i < loadedNames.length; i++) {
+                    loadedNames[i] = loadedGraph.getVertex(i).id;
+                }
+                matrixPanel.setVertexNames(loadedNames);
                 syncStepButtons();
             } catch (IOException | GraphParseException ex) {
                 String message = "Не удалось загрузить граф из файла \"" + file.getName() + "\": " + ex.getMessage();
@@ -84,7 +97,6 @@ public class MainFrame extends JFrame {
             logPanel.printLog("Сохранение в файл будет в итерации 2");
         });
 
-        // Итерация 1 (Харченко): реальные шаги вперёд/назад по алгоритму.
         toolbarPanel.setBackstepButton(e -> {
             guiController.stepBackward();
             syncStepButtons();
@@ -95,10 +107,14 @@ public class MainFrame extends JFrame {
             syncStepButtons();
         });
 
+        toolbarPanel.setInfoButtonListener(e -> {
+            InfoDialog dialog = new InfoDialog(this);
+            dialog.setVisible(true);
+        });
+
         syncStepButtons();
     }
 
-    /** Блокирует "Назад"/"Вперёд" на границах истории шагов алгоритма. */
     private void syncStepButtons() {
         toolbarPanel.setBackstepButtonEnabled(guiController.canStepBackward());
         toolbarPanel.setNextstepButtonEnabled(guiController.canStepForward());

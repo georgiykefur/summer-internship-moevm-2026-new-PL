@@ -59,15 +59,15 @@ public class FloydWarshall {
         boolean improved = false;
 
         if (dist[currentI][currentK] < Graph.INF / 2 &&
-            dist[currentK][currentJ] < Graph.INF / 2 &&
-            viaK < direct) {
+                dist[currentK][currentJ] < Graph.INF / 2 &&
+                viaK < direct) {
 
             dist[currentI][currentJ] = viaK;
             next[currentI][currentJ] = next[currentI][currentK];
             improved = true;
-            lastUpdates.add(new EdgeUpdate(currentI, currentJ, viaK, true));
+            lastUpdates.add(new EdgeUpdate(currentI, currentJ, viaK, true, direct >= Graph.INF / 2));
         } else {
-            lastUpdates.add(new EdgeUpdate(currentI, currentJ, direct, false));
+            lastUpdates.add(new EdgeUpdate(currentI, currentJ, direct, false, false));
         }
 
         moveNext();
@@ -141,12 +141,14 @@ public class FloydWarshall {
         public int to;
         public double value;
         public boolean improved;
+        public boolean wasINF;
 
-        public EdgeUpdate(int from, int to, double value, boolean improved) {
+        public EdgeUpdate(int from, int to, double value, boolean improved, boolean wasINF) {
             this.from = from;
             this.to = to;
             this.value = value;
             this.improved = improved;
+            this.wasINF = wasINF;
         }
     }
 }
