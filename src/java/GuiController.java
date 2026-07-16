@@ -1,3 +1,5 @@
+import java.util.Arrays;
+
 public class GuiController {
 
     private GraphPanel graphPanel;
@@ -8,6 +10,7 @@ public class GuiController {
     private String[] vertexNames;
 
     private StepHistory<StepSnapshot> stepHistory;
+    private boolean algorithmStarted = false;
 
     public GuiController(GraphPanel gp, MatrixPanel mp, LogPanel lp) {
         this.graphPanel = gp;
@@ -58,10 +61,102 @@ public class GuiController {
     }
 
     public void prepareStepMode() {
+        algorithmStarted = false;
         floydWarshall = new FloydWarshall(graph);
         floydWarshall.init();
         stepHistory = new StepHistory<>();
         stepHistory.push(captureSnapshot());
+    }
+
+    private String generateNextVertexName() {
+        if (vertexNames != null && vertexNames.length > 0 && vertexNames[0].matches("[A-Z]")) {
+            char next = (char) ('A' + vertexNames.length);
+            if (next <= 'Z') return String.valueOf(next);
+        }
+        return "V" + vertexNames.length;
+    }
+
+    public void addVertex(int x, int y) {
+        String newId = generateNextVertexName();
+
+        graph.addVertex(newId, x, y);
+
+        String[] newNames = Arrays.copyOf(vertexNames, vertexNames.length + 1);
+        newNames[vertexNames.length] = newId;
+        vertexNames = newNames;
+        graphPanel.setVertexNames(vertexNames);
+        matrixPanel.setVertexNames(vertexNames);
+
+        graphPanel.addVertex(x, y, newId);
+        graphPanel.repaint();
+
+        matrixPanel.renderMatrixPanel(graph.matrix);
+
+        prepareStepMode();
+
+        logPanel.printLog("Добавлена вершина " + newId + " (координаты " + x + ", " + y + ")");
+    }
+
+    public void addEdge(int fromIndex, int toIndex, int weight) {
+        String fromId = vertexNames[fromIndex];
+        String toId = vertexNames[toIndex];
+
+        graph.addEdge(fromId, toId, weight);
+
+        graphPanel.addEdge(fromIndex, toIndex, weight);
+
+        matrixPanel.renderMatrixPanel(graph.matrix);
+
+        logPanel.printLog("Добавлено ребро " + fromId + " → " + toId + " (вес " + weight + ")");
+
+        prepareStepMode();
+    }
+
+    public void removeEdge(int fromIndex, int toIndex) {
+        graph.addEdge(vertexNames[fromIndex], vertexNames[toIndex], Graph.INF);
+
+        graphPanel.removeEdge(fromIndex, toIndex);
+
+        matrixPanel.renderMatrixPanel(graph.matrix);
+        logPanel.printLog("Удалено ребро " + vertexNames[fromIndex] + " → " + vertexNames[toIndex]);
+        prepareStepMode();
+    }
+
+    public void removeVertex(int index) {
+        if (index < 0 || index >= vertexNames.length) return;
+
+        String removedName = vertexNames[index];
+
+        graph.removeVertex(index);
+
+        String[] newNames = new String[vertexNames.length - 1];
+        int pos = 0;
+        for (int i = 0; i < vertexNames.length; i++) {
+            if (i != index) {
+                newNames[pos++] = vertexNames[i];
+            }
+        }
+        vertexNames = newNames;
+        graphPanel.setVertexNames(vertexNames);
+        matrixPanel.setVertexNames(vertexNames);
+
+        graphPanel.removeVertex(index);
+
+        matrixPanel.renderMatrixPanel(graph.matrix);
+
+        prepareStepMode();
+
+        logPanel.printLog("Вершина " + removedName + " удалена.");
+    }
+
+    public void updateEdgeWeight(int fromIndex, int toIndex, int newWeight) {
+        graph.addEdge(vertexNames[fromIndex], vertexNames[toIndex], newWeight);
+        graphPanel.updateEdgeWeight(fromIndex, toIndex, newWeight);  // тоже добавим
+
+        matrixPanel.renderMatrixPanel(graph.matrix);
+        logPanel.printLog("Вес ребра " + vertexNames[fromIndex] + " → " + vertexNames[toIndex] +
+                " изменён на " + newWeight);
+        prepareStepMode();
     }
 
     public boolean canStepForward() {
@@ -80,6 +175,7 @@ public class GuiController {
     }
 
     public void stepForward() {
+        algorithmStarted = true;
         if (stepHistory == null) {
             logPanel.printLog("Граф не загружен — шагать некуда.");
             return;
@@ -99,6 +195,7 @@ public class GuiController {
     public void stepBackward() {
         if (stepHistory == null || !stepHistory.canStepBackward()) {
             logPanel.printLog("Шагать назад некуда.");
+            algorithmStarted = false;
             return;
         }
         applySnapshot(stepHistory.stepBackward());
@@ -285,7 +382,18 @@ public class GuiController {
         }
     }
 
+    public boolean isAlgorithmRunning() {
+        boolean result = algorithmStarted &&
+                stepHistory != null &&
+                !stepHistory.current().finished;
+//        System.out.println("isAlgorithmRunning: " + result +
+//                " | algorithmStarted=" + algorithmStarted +
+//                " | finished=" + (stepHistory.current() != null) + " | stepHi=" + (!stepHistory.current().finished));
+        return result;
+    }
+
     public void runAlgorithm() {
+        algorithmStarted = true;
         if (graph == null || graph.size() == 0) {
             logPanel.printLog("Ошибка: граф не загружен");
             return;

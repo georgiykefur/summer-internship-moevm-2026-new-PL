@@ -12,6 +12,31 @@ public class Graph {
         rebuildMatrix();
     }
 
+    public void removeVertex(int index) {
+        if (index < 0 || index >= vertices.size()) return;
+        vertices.remove(index);
+        rebuildMatrixAfterRemoval(index);
+    }
+
+    private void rebuildMatrixAfterRemoval(int removedIndex) {
+        int n = vertices.size() + 1; // старый размер
+        int newSize = n - 1;
+        double[][] newMatrix = new double[newSize][newSize];
+
+        int ni = 0;
+        for (int i = 0; i < n; i++) {
+            if (i == removedIndex) continue;
+            int nj = 0;
+            for (int j = 0; j < n; j++) {
+                if (j == removedIndex) continue;
+                newMatrix[ni][nj] = matrix[i][j];
+                nj++;
+            }
+            ni++;
+        }
+        matrix = newMatrix;
+    }
+
     public void addEdge(String fromId, String toId, double weight) {
         int from = findIndex(fromId);
         int to = findIndex(toId);

@@ -33,7 +33,7 @@ public class ToolbarPanel extends JPanel {
         add(backstepButton);
         add(nextstepButton);
         add(addVertexButton);
-        add(addEdgeButton);
+//        add(addEdgeButton);
         add(infoButton);
     }
 

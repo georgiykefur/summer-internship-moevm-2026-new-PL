@@ -1,5 +1,8 @@
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
 import java.io.File;
 import java.io.IOException;
 
@@ -23,6 +26,7 @@ public class MainFrame extends JFrame {
         logPanel = new LogPanel();
 
         guiController = new GuiController(graphPanel, matrixPanel, logPanel);
+        graphPanel.setController(guiController);
 
         setLayout(new BorderLayout());
 
@@ -51,8 +55,8 @@ public class MainFrame extends JFrame {
         guiController.prepareStepMode();
 
         // Передаём имена вершин в MatrixPanel
-        String[] names = {"A", "B", "C", "D"};
-        matrixPanel.setVertexNames(names);
+//        String[] names = {"A", "B", "C", "D"};
+//        matrixPanel.setVertexNames(names);
 
         toolbarPanel.setStartButtonListener(e -> {
             guiController.runAlgorithm();
@@ -60,8 +64,11 @@ public class MainFrame extends JFrame {
         });
 
         toolbarPanel.setAddVertexButtonListener(e -> {
-            graphPanel.addVertex();
-            logPanel.printLog("Добавлена вершина " + graphPanel.getCount());
+            // Определяем центр видимой области GraphPanel
+            int cx = graphPanel.getWidth() / 2;
+            int cy = graphPanel.getHeight() / 2;
+            guiController.addVertex(cx, cy);
+            syncStepButtons();
         });
 
         toolbarPanel.setAddEdgeButtonListener(e -> {
@@ -113,6 +120,63 @@ public class MainFrame extends JFrame {
         });
 
         syncStepButtons();
+        setupZoomButtons();
+
+    }
+
+    private void setupZoomButtons() {
+        JPanel glass = new JPanel(new BorderLayout()) {
+            @Override
+            public boolean contains(int x, int y) {
+                for (Component child : getComponents()) {
+                    Point p = SwingUtilities.convertPoint(this, x, y, child);
+                    if (child.contains(p.x, p.y)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        };
+        glass.setOpaque(false);
+
+        JPanel zoomButtons = new JPanel();
+        zoomButtons.setLayout(new BoxLayout(zoomButtons, BoxLayout.Y_AXIS));
+        zoomButtons.setOpaque(false);
+        zoomButtons.setBorder(BorderFactory.createEmptyBorder(0, 16, 16, 0));
+
+        JButton zoomIn  = makeZoomButton("+");
+        JButton zoomOut = makeZoomButton("−");
+
+        zoomIn.addActionListener(e  -> graphPanel.applyZoomStep(1.4));
+        zoomOut.addActionListener(e -> graphPanel.applyZoomStep(1.0 / 1.4));
+
+        zoomButtons.add(zoomIn);
+        zoomButtons.add(Box.createVerticalStrut(6));
+        zoomButtons.add(zoomOut);
+
+        glass.add(zoomButtons, BorderLayout.SOUTH);
+
+        setGlassPane(glass);
+        glass.setVisible(true);
+    }
+
+
+
+    private Component findComponentAt(Container container, int x, int y) {
+        Component comp = container.findComponentAt(x, y);
+        if (comp instanceof JButton) return null;
+        return comp;
+    }
+
+    private JButton makeZoomButton(String text){
+        JButton button = new JButton(text);
+        button.setPreferredSize(new Dimension(40, 40));
+        button.setMaximumSize(new Dimension(40, 40));
+        button.setFont(new Font("SansSerif", Font.BOLD, 18));
+        button.setFocusPainted(false);
+        button.setBackground(Color.WHITE);
+        button.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+        return button;
     }
 
     private void syncStepButtons() {

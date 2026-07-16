@@ -8,6 +8,7 @@ import java.util.List;
 public class MatrixPanel extends JPanel {
 
     private JTable table;
+    private JScrollPane scrollPane;
     private DefaultTableModel tableModel;
     private Object[][] initialData;
     private ArrayList<String> vertexNames;
@@ -114,7 +115,7 @@ public class MatrixPanel extends JPanel {
         DefaultTableCellRenderer headerRenderer = (DefaultTableCellRenderer) table.getTableHeader().getDefaultRenderer();
         headerRenderer.setHorizontalAlignment(JLabel.CENTER);
 
-        int cellSize = 40;
+        int cellSize = 30;
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         table.setRowHeight(cellSize);
 

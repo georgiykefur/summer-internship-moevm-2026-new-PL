@@ -6,7 +6,7 @@ public class Main {
     public static void main(String[] args) {
         System.out.println("Оконное приложение запущено");
 
-        setGlobalFont(new Font(Font.MONOSPACED, Font.PLAIN, 15));
+        setGlobalFont(new Font(Font.SANS_SERIF, Font.PLAIN, 15));
 
         SwingUtilities.invokeLater(() -> {
             MainFrame frame = new MainFrame();
